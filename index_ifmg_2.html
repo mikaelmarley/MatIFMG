@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratório de Probabilidade | IFMG</title>
+    <style>
+        :root {
+            --bg: #060b16;
+            --card-bg: #0f172a;
+            --card-surface: #1e293b;
+            --gold: #fbbf24;
+            --gold-glow: rgba(251, 191, 36, 0.3);
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --purple: #c084fc;
+            --purple-glow: rgba(192, 132, 252, 0.3);
+            --text: #f8fafc;
+            --sub: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: auto;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(192, 132, 252, 0.05) 0%, transparent 40%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 30px 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* CABEÇALHO GLOWING */
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+            position: relative;
+        }
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            background: linear-gradient(135deg, #fff 30%, var(--gold) 70%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .header .subtitle {
+            color: var(--sub);
+            font-size: 1.1rem;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+        .badge {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: var(--gold);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* CONTROLES INTEGRADOS */
+        .panel-control {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 20px 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .panel-control label {
+            font-weight: 600;
+            color: var(--sub);
+            font-size: 0.95rem;
+        }
+        .panel-control select {
+            background: var(--card-surface);
+            color: #fff;
+            border: 1px solid var(--border);
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .panel-control select:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* TABULEIRO DE CARTAS VIVAS */
+        .tabuleiro-secao {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+        }
+        .tabuleiro-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 15px;
+        }
+        .tabuleiro-header h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .status-escolha {
+            font-size: 1rem;
+            font-weight: 700;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            padding: 6px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .grid-tabuleiro {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            gap: 12px;
+            max-height: 360px;
+            overflow-y: auto;
+            background: #090d16;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+        .grid-tabuleiro::-webkit-scrollbar { width: 8px; }
+        .grid-tabuleiro::-webkit-scrollbar-track { background: transparent; }
+        .grid-tabuleiro::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        /* ARQUITETURA DA CARTA PREMUM */
+        .carta-slot {
+            aspect-ratio: 2.5/3.5;
+            perspective: 1000px;
+        }
+        .carta-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .carta-slot.revelada .carta-inner {
+            transform: rotateY(180deg);
+        }
+        .carta-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+            font-weight: 800;
+            font-size: 14px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+        }
+        .carta-verso {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #334155;
+            color: #475569;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            transition: all 0.2s ease;
+        }
+        .carta-slot:not(.revelada):hover .carta-verso {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 8px 15px var(--accent-glow);
+            cursor: pointer;
+        }
+        .carta-frente {
+            background: #ffffff;
+            color: #0f172a;
+            transform: rotateY(180deg);
+            border: 2px solid #e2e8f0;
+        }
+        .carta-frente.vermelho { color: var(--danger); }
+        .carta-frente.preto { color: #0f172a; }
+        .carta-frente.coringa {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 2px solid var(--gold);
+            color: #b45309;
+            box-shadow: 0 0 15px var(--gold-glow);
+            animation: pulseGlow 1.5s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px var(--gold-glow); }
+            100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.6); }
+        }
+
+        /* GRID DAS MESAS ANALÍTICAS */
+        .grid-mesas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        @media (max-width: 850px) {
+            .grid-mesas { grid-template-columns: 1fr; }
+        }
+        .mesa {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s;
+        }
+        .mesa.manual { border-top: 4px solid var(--purple); }
+        .mesa.simulada { border-top: 4px solid var(--accent); }
+        
+        .mesa-title-area {
+            margin-bottom: 20px;
+        }
+        .mesa h2 { 
+            font-size: 1.4rem; 
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mesa.manual h2 i { color: var(--purple); }
+        .mesa.simulada h2 i { color: var(--accent); }
+        .mesa .info-rodadas { 
+            font-size: 0.9rem; 
+            color: var(--sub); 
+            margin-top: 4px;
+        }
+
+        /* EXIBIÇÃO DE MÃOS RETIRADAS */
+        .selecao-atual {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            min-height: 90px;
+            background: rgba(0,0,0,0.15);
+            padding: 12px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            align-items: center;
+        }
+        .mini-carta {
+            width: 50px;
+            height: 72px;
+            background: var(--card-surface);
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--sub);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .mini-carta.ativa {
+            background: #fff;
+            border-style: solid;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transform: scale(1.05);
+        }
+
+        /* BOTÕES ESTILIZADOS */
+        button {
+            width: 100%;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            color: #fff;
+        }
+        .btn-action-manual {
+            background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+            box-shadow: 0 4px 15px var(--purple-glow);
+        }
+        .btn-action-manual:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+        }
+        .btn-action-sim {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+        .btn-action-sim:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+        }
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+        .btn-danger:hover {
+            background: var(--danger);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        button:disabled {
+            background: #1e293b !important;
+            color: #475569 !important;
+            cursor: not-allowed;
+            box-shadow: none !important;
+            transform: none !important;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* ESTATÍSTICAS E BARRAS DE PRECISÃO */
+        .estatisticas {
+            margin-top: 25px;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+        .barra-item { margin-bottom: 15px; }
+        .barra-item:last-child { margin-bottom: 0; }
+        .barra-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--sub);
+        }
+        .barra-bg {
+            background: #090d16;
+            height: 28px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .barra-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 6px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            top: 0; left: 0;
+        }
+        .barra-fill.teorica { 
+            background: linear-gradient(90deg, #eab308, var(--gold)); 
+            width: 9.43%;
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+        .barra-fill.manual-fill { background: linear-gradient(90deg, #a855f7, #c084fc); }
+        .barra-fill.simulada-fill { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+        
+        .texto-barra-interno {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 26px;
+            color: #fff;
+            z-index: 2;
+            letter-spacing: 0.05em;
+        }
+        .sucesso-contador { 
+            font-size: 0.95rem; 
+            color: var(--gold); 
+            margin-top: 15px; 
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ENGINE DE INSIGHTS DINÂMICOS */
+        .insights-box {
+            margin-top: 30px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%);
+            border: 1px solid var(--border);
+            padding: 20px 25px;
+            border-radius: 20px;
+            text-align: left;
+        }
+        .insights-box h4 {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .insights-box p {
+            font-size: 0.95rem;
+            color: var(--sub);
+        }
+
+        .footer-note { 
+            text-align: center; 
+            margin-top: 35px; 
+            color: var(--sub); 
+            font-size: 0.85rem; 
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 20px;
+        }
+    
+/* =========================================================
+   INTERFACE INSTITUCIONAL — inspiração na identidade visual IFMG
+   Cores oficiais consultadas no Manual de Identidade Visual.
+   ========================================================= */
+:root {
+    --ifmg-verde: #2f9e41;
+    --ifmg-verde-escuro: #247a33;
+    --ifmg-vermelho: #cd191e;
+    --ifmg-preto: #000000;
+    --ifmg-cinza: #5f6368;
+    --ifmg-cinza-claro: #e5e5e5;
+    --ifmg-fundo: #f4f4f2;
+    --ifmg-branco: #ffffff;
+    --ifmg-borda: #d2d2d2;
+
+    --bg: var(--ifmg-fundo);
+    --card-bg: var(--ifmg-branco);
+    --card-surface: #f8f8f8;
+    --gold: var(--ifmg-vermelho);
+    --gold-glow: rgba(205,25,30,0.12);
+    --accent: var(--ifmg-verde);
+    --accent-glow: rgba(47,158,65,0.12);
+    --purple: var(--ifmg-verde);
+    --purple-glow: rgba(47,158,65,0.12);
+    --text: #222222;
+    --sub: #5f6368;
+    --border: var(--ifmg-borda);
+    --success: var(--ifmg-verde);
+    --danger: var(--ifmg-vermelho);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--ifmg-fundo); }
+body {
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    background: var(--ifmg-fundo);
+    color: var(--text);
+    padding: 0 18px 40px;
+    line-height: 1.5;
+}
+body::before {
+    content: "";
+    display: block;
+    height: 8px;
+    margin: 0 -18px 0;
+    background: var(--ifmg-verde);
+}
+.container { max-width: 1180px; margin: 0 auto; }
+.header {
+    text-align: left;
+    margin: 0 -18px 22px;
+    padding: 22px 30px 24px;
+    background: #fff;
+    border-bottom: 4px solid var(--ifmg-verde);
+}
+.marca-ifmg {
+    display:flex;
+    align-items:center;
+    gap:18px;
+    width:100%;
+    margin-bottom:18px;
+    color:#111;
+}
+.marca-ifmg img {
+    display:block;
+    width:min(420px, 62vw);
+    height:auto;
+    max-height:78px;
+    object-fit:contain;
+    object-position:left center;
+}
+.marca-descricao {
+    margin:0;
+    padding-left:18px;
+    border-left:1px solid #d2d2d2;
+    color:#5c5c5c;
+    font-size:.82rem;
+    line-height:1.35;
+    max-width:500px;
+}
+.marca-descricao strong {
+    display:block;
+    color:#222;
+    font-size:.88rem;
+    font-weight:700;
+    margin-bottom:2px;
+}
+.marca-descricao span {
+    display:block;
+}
+.header h1 {
+    font-size: 2.15rem;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: 0;
+    color:#222;
+    background:none;
+    -webkit-text-fill-color:initial;
+    margin:0 0 8px;
+}
+.header .subtitle {
+    color: #565656;
+    font-size: 1rem;
+    max-width: 850px;
+    margin: 0;
+}
+.badge { display:none !important; }
+
+.panel-control,
+.tabuleiro-secao,
+.mesa,
+.insights-box {
+    background:#fff;
+    border:1px solid #cfcfcf;
+    border-radius:2px;
+    box-shadow:none;
+}
+.panel-control {
+    padding:16px 18px;
+    margin-bottom:18px;
+    gap:16px;
+}
+.panel-control label { color:#303030; font-weight:700; }
+.panel-control select {
+    background:#fff;
+    color:#222;
+    border:1px solid #aaa;
+    border-radius:2px;
+    padding:9px 12px;
+    font-size:.95rem;
+    font-weight:400;
+}
+.panel-control select:hover,
+.panel-control select:focus {
+    border-color:var(--ifmg-verde);
+    box-shadow:none;
+}
+.btn-danger {
+    width:auto;
+    min-width:120px;
+    background:#fff;
+    border:1px solid #aaa;
+    color:#333;
+    border-radius:2px;
+    padding:9px 16px;
+}
+.btn-danger:hover { background:#f1f1f1; color:#222; box-shadow:none; }
+
+.tabuleiro-secao { padding:20px; margin-bottom:18px; }
+.tabuleiro-header { margin-bottom:14px; padding-bottom:12px; border-bottom:2px solid var(--ifmg-verde); }
+.tabuleiro-header h3 { font-size:1.2rem; font-weight:700; color:#222; }
+.status-escolha {
+    font-size:.9rem;
+    background:#f1f6f2;
+    color:var(--ifmg-verde-escuro);
+    padding:5px 10px;
+    border-radius:2px;
+    border:1px solid #c9dfce;
+}
+.grid-tabuleiro {
+    background:#efefed;
+    padding:14px;
+    border-radius:2px;
+    border:1px solid #d7d7d7;
+    gap:9px;
+    max-height:350px;
+}
+.carta-verso {
+    background:#fbfbfb;
+    border:1px solid #c5c5c5;
+    color:#777;
+    border-radius:3px;
+}
+.carta-slot:not(.revelada):hover .carta-verso {
+    transform:translateY(-2px);
+    border-color:var(--ifmg-verde);
+    color:var(--ifmg-verde);
+    box-shadow:0 2px 5px rgba(0,0,0,.12);
+}
+.carta-frente { border-radius:3px; box-shadow:0 2px 4px rgba(0,0,0,.12); }
+.carta-frente.coringa { background:#fff8e8; border-color:var(--ifmg-vermelho); color:#9e171b; box-shadow:0 2px 7px rgba(205,25,30,.15); animation:none; }
+
+.grid-mesas { grid-template-columns:1fr 1fr; gap:18px; }
+.mesa { padding:20px; border-top:4px solid var(--ifmg-verde); }
+.mesa.manual { border-top-color:var(--ifmg-verde); }
+.mesa.simulada { border-top-color:var(--ifmg-verde); }
+.mesa h2 { font-size:1.22rem; color:#222; font-weight:700; }
+.mesa .info-rodadas { color:#686868; font-size:.9rem; }
+.selecao-atual { background:#fafafa; border:1px solid #e2e2e2; border-radius:2px; }
+.mini-carta { border-radius:2px; }
+.mini-carta.ativa { transform:none; }
+button { border-radius:2px; box-shadow:none !important; }
+.btn-action-manual,
+.btn-action-sim {
+    background:var(--ifmg-verde);
+    color:#fff;
+    border-radius:2px;
+    box-shadow:none;
+}
+.btn-action-manual:hover:not(:disabled),
+.btn-action-sim:hover:not(:disabled) {
+    transform:none;
+    background:var(--ifmg-verde-escuro);
+    box-shadow:none;
+}
+button:disabled { background:#e5e5e5 !important; color:#9a9a9a !important; border:1px solid #d2d2d2; }
+.estatisticas { background:#f8f8f8; border:1px solid #e0e0e0; border-radius:2px; padding:16px; }
+.barra-bg { background:#e9e9e9; border:1px solid #d3d3d3; border-radius:2px; }
+.barra-fill { border-radius:0; box-shadow:none; }
+.barra-fill.teorica { background:var(--ifmg-vermelho); box-shadow:none; }
+.barra-fill.manual-fill,
+.barra-fill.simulada-fill { background:var(--ifmg-verde); }
+.texto-barra-interno { color:#fff; }
+.sucesso-contador { color:var(--ifmg-verde-escuro); }
+.insights-box { margin-top:18px; padding:17px 20px; }
+.insights-box h4 { color:#222; }
+.insights-box p { color:#555; }
+.footer-note { color:#686868; border-top:1px solid #d7d7d7; font-size:.82rem; }
+
+@media (max-width: 850px) {
+    .header { padding:20px; }
+    .marca-ifmg { flex-direction:column; align-items:flex-start; gap:12px; }
+    .marca-ifmg img { width:min(420px, 90vw); max-height:90px; }
+    .marca-descricao { padding-left:0; border-left:0; border-top:1px solid #d2d2d2; padding-top:10px; max-width:100%; }
+    .grid-mesas { grid-template-columns:1fr; }
+    .panel-control { align-items:flex-start; }
+    .btn-danger { width:100%; }
+}
+
+</style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="marca-ifmg" aria-label="Instituto Federal de Educação, Ciência e Tecnologia de Minas Gerais (IFMG) – Campus São João Evangelista">
+                <img src="https://www2.ifmg.edu.br/portal/comunicacao/logo/rgb/completa/campus-sao-joao-evangelista.png"
+                     alt="Instituto Federal de Educação, Ciência e Tecnologia de Minas Gerais – Campus São João Evangelista">
+                <p class="marca-descricao">
+                    <strong>Instituto Federal de Educação, Ciência e Tecnologia de Minas Gerais (IFMG)</strong>
+                    <span>Campus São João Evangelista</span>
+                </p>
+            </div>
+            <h1>Laboratório de Probabilidade</h1>
+            <p class="subtitle">
+                Atividade prática de probabilidade: em cada rodada são selecionadas 5 cartas de um baralho com 53 cartas, composto por um baralho padrão e 1 coringa.
+            </p>
+        </div>
+
+        <div class="panel-control">
+            <div class="control-group">
+                <label for="meta-jogadas">Número de rodadas:</label>
+                <select id="meta-jogadas" onchange="alterarMetaDeJogadas()">
+                    <option value="1">1 Rodada</option>
+                    <option value="5">5 Rodadas</option>
+                    <option value="10">10 Rodadas</option>
+                    <option value="20" selected>20 Rodadas</option>
+                    <option value="50">50 Rodadas</option>
+                    <option value="100">100 Rodadas</option>
+                    <option value="1000">1.000 Rodadas</option>
+                    <option value="10000">10.000 Rodadas</option>
+                    <option value="100000">100.000 Rodadas</option>
+                    <option value="1000000">1.000.000 Rodadas (Milhão)</option>
+                    <option value="1000000000">1.000.000.000 Rodadas (Bilhão ⚡)</option>
+                </select>
+            </div>
+            <button class="btn-danger" onclick="reiniciarGeral()">Reiniciar</button>
+        </div>
+
+        <div class="tabuleiro-secao">
+            <div class="tabuleiro-header">
+                <h3>Selecione 5 cartas para a rodada</h3>
+                <div class="status-escolha" id="txt-status-escolha">Selecione 5 cartas (0/5)</div>
+            </div>
+            <div class="grid-tabuleiro" id="container-tabuleiro"></div>
+        </div>
+
+        <div class="grid-mesas">
+            <div class="mesa manual">
+                <div class="mesa-title-area">
+                    <h2>Amostragem manual</h2>
+                    <p class="info-rodadas">Rodadas: <span id="rodadas-manual" style="font-weight:700; color:var(--ifmg-verde-escuro);">0</span> / <span class="meta-label">20</span></p>
+                </div>
+
+                <div class="selecao-atual" id="selecao-atual-manual"></div>
+
+                <div>
+                    <button class="btn-action-manual" id="btn-proxima-rodada" onclick="avancarRodadaManual()" disabled>Registrar rodada</button>
+                </div>
+
+                <div class="estatisticas">
+                    <div class="barra-item">
+                        <div class="barra-label"><span>Probabilidade teórica</span><span>9,43%</span></div>
+                        <div class="barra-bg">
+                            <div class="barra-fill teorica"></div>
+                            <div class="texto-barra-interno">P(Teórica) = 9,43%</div>
+                        </div>
+                    </div>
+                    <div class="barra-item">
+                        <div class="barra-label"><span>Frequência observada</span><span id="txt-exp-manual" style="color:var(--purple)">0,00%</span></div>
+                        <div class="barra-bg">
+                            <div id="barra-exp-manual" class="barra-fill manual-fill"></div>
+                            <div class="texto-barra-interno" id="txt-interno-manual">0,00%</div>
+                        </div>
+                    </div>
+                    <p class="sucesso-contador">Coringas encontrados: <span id="sucessos-manual" style="font-size:1.1rem; color:var(--ifmg-verde-escuro)">0</span></p>
+                </div>
+            </div>
+
+            <div class="mesa simulada">
+                <div class="mesa-title-area">
+                    <h2>Simulação computacional</h2>
+                    <p class="info-rodadas">Rodadas: <span id="rodadas-simulada" style="font-weight:700; color:var(--ifmg-verde-escuro);">0</span> / <span class="meta-label">20</span></p>
+                </div>
+
+                <div class="selecao-atual" id="selecao-atual-simulada"></div>
+
+                <div>
+                    <button class="btn-action-sim" id="btn-rodar-simulacao" onclick="executarSimulacaoComputacional()">Executar simulação</button>
+                </div>
+
+                <div class="estatisticas">
+                    <div class="barra-item">
+                        <div class="barra-label"><span>Probabilidade teórica</span><span>9,43%</span></div>
+                        <div class="barra-bg">
+                            <div class="barra-fill teorica"></div>
+                            <div class="texto-barra-interno">P(Teórica) = 9,43%</div>
+                        </div>
+                    </div>
+                    <div class="barra-item">
+                        <div class="barra-label"><span>Frequência observada</span><span id="txt-exp-simulada" style="color:var(--accent)">0,00%</span></div>
+                        <div class="barra-bg">
+                            <div id="barra-exp-simulada" class="barra-fill simulada-fill"></div>
+                            <div class="texto-barra-interno" id="txt-interno-simulada">0,00%</div>
+                        </div>
+                    </div>
+                    <p class="sucesso-contador">Coringas encontrados: <span id="sucessos-simulada" style="font-size:1.1rem; color:var(--ifmg-verde-escuro)">0</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="insights-box">
+            <h4>Análise: <span id="insight-tag" style="color:var(--gold); font-weight:800;">Aguardando resultados</span></h4>
+            <p id="insight-texto">Realize algumas rodadas para comparar a frequência observada com a probabilidade teórica.</p>
+        </div>
+
+        <p class="footer-note">
+            Probabilidade teórica de uma mão de 5 cartas conter o coringa: 5/53 = 9,43396%. As 5 cartas são distintas em cada rodada.
+        </p>
+    </div>
+
+    <script>
+        const naipes = ['♠', '♥', '♦', '♣'];
+        const valores = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        
+        let metaRodadas = 20;
+        let baralhoAtual = [];
+        let cartasSelecionadasIndices = [];
+
+        let dados = {
+            manual: { rodadas: 0, sucessos: 0 },
+            simulada: { rodadas: 0, sucessos: 0 }
+        };
+
+        function gerarBaralhoCompleto() {
+            let deck = [];
+            for (let n of naipes) {
+                for (let v of valores) {
+                    deck.push({
+                        tipo: 'normal',
+                        valor: v,
+                        naipe: n,
+                        cor: (n === '♥' || n === '♦') ? 'vermelho' : 'preto'
+                    });
+                }
+            }
+            deck.push({ tipo: 'coringa', valor: '⭐', naipe: '🃏', cor: 'coringa' });
+            return deck;
+        }
+
+        function embaralhar(arr) {
+            let a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function inicializarRodadaManual() {
+            if (dados.manual.rodadas >= metaRodadas) {
+                document.getElementById('txt-status-escolha').innerText = "Amostragem manual concluída.";
+                return;
+            }
+            
+            baralhoAtual = embaralhar(gerarBaralhoCompleto());
+            cartasSelecionadasIndices = [];
+            
+            document.getElementById('txt-status-escolha').innerText = "Selecione 5 cartas (0/5)";
+            document.getElementById('btn-proxima-rodada').disabled = true;
+            
+            atualizarVisualizacaoMiniCartas('manual');
+
+            const tabuleiro = document.getElementById('container-tabuleiro');
+            tabuleiro.innerHTML = '';
+
+            baralhoAtual.forEach((carta, index) => {
+                let slot = document.createElement('div');
+                slot.className = 'carta-slot';
+                slot.id = `slot-${index}`;
+                slot.onclick = () => clicarCarta(index);
+
+                slot.innerHTML = `
+                    <div class="carta-inner">
+                        <div class="carta-face carta-verso">IFMG</div>
+                        <div class="carta-face carta-frente ${carta.cor}">
+                            <div style="text-align: left; line-height: 1">${carta.valor}</div>
+                            <div style="font-size: 24px; text-align: center;">${carta.naipe}</div>
+                            <div style="transform: rotate(180deg); text-align: left; line-height: 1">${carta.valor}</div>
+                        </div>
+                    </div>
+                `;
+                tabuleiro.appendChild(slot);
+            });
+        }
+
+        function clicarCarta(index) {
+            if (cartasSelecionadasIndices.length >= 5 || cartasSelecionadasIndices.includes(index)) return;
+
+            cartasSelecionadasIndices.push(index);
+            const slot = document.getElementById(`slot-${index}`);
+            slot.classList.add('revelada');
+
+            atualizarVisualizacaoMiniCartas('manual');
+            document.getElementById('txt-status-escolha').innerText = `Selecionadas (${cartasSelecionadasIndices.length}/5)`;
+
+            if (cartasSelecionadasIndices.length === 5) {
+                document.getElementById('btn-proxima-rodada').disabled = false;
+                document.querySelectorAll('.carta-slot').forEach(s => s.style.pointerEvents = 'none');
+            }
+        }
+
+        function atualizarVisualizacaoMiniCartas(modo, maozinhaSimulada = []) {
+            const container = document.getElementById(`selecao-atual-${modo}`);
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                if (modo === 'manual') {
+                    if (cartasSelecionadasIndices[i] !== undefined) {
+                        const carta = baralhoAtual[cartasSelecionadasIndices[i]];
+                        let corTexto = carta.cor === 'vermelho' ? '#ef4444' : (carta.cor === 'coringa' ? '#b45309' : '#0f172a');
+                        let bgCarta = carta.cor === 'coringa' ? 'linear-gradient(135deg, #fffbeb, #fef3c7)' : '#fff';
+                        container.innerHTML += `<div class="mini-carta ativa" style="background: ${bgCarta}; color: ${corTexto}">${carta.valor}${carta.naipe}</div>`;
+                    } else {
+                        container.innerHTML += '<div class="mini-carta">--</div>';
+                    }
+                } else {
+                    if (maozinhaSimulada[i] !== undefined) {
+                        const carta = maozinhaSimulada[i];
+                        let corTexto = carta.cor === 'vermelho' ? '#ef4444' : (carta.cor === 'coringa' ? '#b45309' : '#0f172a');
+                        let bgCarta = carta.cor === 'coringa' ? 'linear-gradient(135deg, #fffbeb, #fef3c7)' : '#fff';
+                        container.innerHTML += `<div class="mini-carta ativa" style="background: ${bgCarta}; color: ${corTexto}">${carta.valor}${carta.naipe}</div>`;
+                    } else {
+                        container.innerHTML += '<div class="mini-carta">--</div>';
+                    }
+                }
+            }
+        }
+
+        function avancarRodadaManual() {
+            let teveCoringa = cartasSelecionadasIndices.some(idx => baralhoAtual[idx].tipo === 'coringa');
+
+            dados.manual.rodadas++;
+            if (teveCoringa) dados.manual.sucessos++;
+
+            atualizarEstatisticasPainel('manual');
+            gerarInsightsEstatisticos();
+            
+            if(dados.manual.rodadas < metaRodadas) {
+                inicializarRodadaManual();
+            } else {
+                document.getElementById('txt-status-escolha').innerText = "Amostragem manual finalizada.";
+                document.getElementById('btn-proxima-rodada').disabled = true;
+            }
+        }
+
+        // MOTOR DE SIMULAÇÃO ASSÍNCRONA EM LOTES DE ALTA PERFORMANCE
+        // Cada rodada reproduz o experimento físico: selecionar 5 cartas distintas
+        // de um baralho de 53, sem reposição.
+        function executarSimulacaoComputacional() {
+            document.getElementById('btn-rodar-simulacao').disabled = true;
+            let totalMeta = metaRodadas;
+            let rodadaAtualSim = 0;
+            let sucessosAcumuladosSim = 0;
+            let ultimaMaoSimulada = [];
+            const cartasBase = gerarBaralhoCompleto();
+
+            // Configuração reativa de lotes baseada no tamanho da amostragem.
+            // O lote só controla a atualização visual; cada rodada continua sendo simulada individualmente.
+            let tamanhoLote = 1;
+            let intervaloMs = 30;
+
+            if (totalMeta > 100) {
+                intervaloMs = 16; // Atualiza aproximadamente na cadência de 60 Hz.
+                tamanhoLote = Math.ceil(totalMeta / 100); // Aproximadamente 100 atualizações visuais.
+            }
+
+            // Amostragem uniforme sem reposição: a troca parcial de Fisher-Yates
+            // seleciona exatamente 5 posições distintas dentre as 53. Isso é
+            // matematicamente equivalente às 5 primeiras cartas de um baralho
+            // completamente embaralhado, mas evita embaralhar as 53 cartas inteiras.
+            function simularUmaRodada() {
+                const indices = new Uint8Array(53);
+                for (let i = 0; i < 53; i++) indices[i] = i;
+
+                const mao = [];
+                let teveCoringa = false;
+
+                for (let i = 0; i < 5; i++) {
+                    const j = i + Math.floor(Math.random() * (53 - i));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+
+                    const carta = cartasBase[indices[i]];
+                    mao.push(carta);
+                    if (carta.tipo === 'coringa') teveCoringa = true;
+                }
+
+                ultimaMaoSimulada = mao;
+                if (teveCoringa) sucessosAcumuladosSim++;
+                rodadaAtualSim++;
+            }
+
+            function rodarPasso() {
+                const restante = totalMeta - rodadaAtualSim;
+                const nParaProcessar = Math.min(tamanhoLote, restante);
+
+                for (let i = 0; i < nParaProcessar; i++) {
+                    simularUmaRodada();
+                }
+
+                dados.simulada.rodadas = rodadaAtualSim;
+                dados.simulada.sucessos = sucessosAcumuladosSim;
+
+                atualizarEstatisticasPainel('simulada');
+
+                if (rodadaAtualSim < totalMeta) {
+                    setTimeout(rodarPasso, intervaloMs);
+                } else {
+                    // Mostra a mão realmente sorteada na última rodada simulada.
+                    atualizarVisualizacaoMiniCartas('simulada', ultimaMaoSimulada);
+                    document.getElementById('btn-rodar-simulacao').disabled = false;
+                    gerarInsightsEstatisticos();
+                }
+            }
+
+            rodarPasso();
+        }
+
+        function atualizarEstatisticasPainel(modo) {
+            let r = dados[modo].rodadas;
+            let s = dados[modo].sucessos;
+            
+            let freqExp = r > 0 ? (s / r) * 100 : 0;
+            let freqStr = freqExp.toFixed(4) + '%'; // Maior precisão de casas decimais para amostras colossais
+
+            document.getElementById(`rodadas-${modo}`).innerText = r.toLocaleString('pt-BR');
+            document.getElementById(`sucessos-${modo}`).innerText = s.toLocaleString('pt-BR');
+            document.getElementById(`txt-exp-${modo}`).innerText = freqStr;
+            document.getElementById(`barra-exp-${modo}`).style.width = Math.min(freqExp, 100) + '%';
+            document.getElementById(`txt-interno-${modo}`).innerText = freqStr;
+        }
+
+        function gerarInsightsEstatisticos() {
+            const tag = document.getElementById('insight-tag');
+            const texto = document.getElementById('insight-texto');
+
+            let totalRodadas = dados.manual.rodadas + dados.simulada.rodadas;
+            if (totalRodadas === 0) return;
+
+            let fSimulada = dados.simulada.rodadas > 0 ? (dados.simulada.sucessos / dados.simulada.rodadas) * 100 : 9.43;
+
+            if (metaRodadas <= 10) {
+                tag.innerText = "Alta Volatilidade Esperada";
+                texto.innerText = `Com um volume de apenas ${metaRodadas.toLocaleString('pt-BR')} rodadas, o desvio padrão empírico é severo. A probabilidade não se estabiliza em amostras minúsculas.`;
+            } else if (metaRodadas >= 1000000) {
+                tag.innerText = "Alta Precisão Empírica";
+                texto.innerText = `Com ${metaRodadas.toLocaleString('pt-BR')} rodadas, as flutuações relativas tendem a ser pequenas. A frequência observada foi ${fSimulada.toFixed(4)}%, próxima do valor teórico de 9,43396%, mas ainda sujeita à variação aleatória.`;
+            } else if (metaRodadas >= 1000) {
+                tag.innerText = "Estabilização Estatística";
+                texto.innerText = `Com ${metaRodadas.toLocaleString('pt-BR')} execuções, a frequência tende a oscilar menos em torno do valor teórico de 9,43396%. A convergência é gradual, não uma igualdade exata.`;
+            } else {
+                tag.innerText = "Amostragem em Transição";
+                texto.innerText = `À medida que o número de rodadas aumenta, a frequência relativa tende a se aproximar de 9,43396%, conforme a Lei dos Grandes Números.`;
+            }
+        }
+
+        function Skinner_Format() {
+            const labels = document.querySelectorAll('.meta-label');
+            labels.forEach(l => l.innerText = metaRodadas.toLocaleString('pt-BR'));
+        }
+
+        function alterarMetaDeJogadas() {
+            metaRodadas = parseInt(document.getElementById('meta-jogadas').value);
+            Skinner_Format();
+            reiniciarGeral();
+        }
+
+        function reiniciarGeral() {
+            dados.manual = { rodadas: 0, sucessos: 0 };
+            dados.simulada = { rodadas: 0, sucessos: 0 };
+            
+            atualizarEstatisticasPainel('manual');
+            atualizarEstatisticasPainel('simulada');
+            
+            document.getElementById('selecao-atual-simulada').innerHTML = '';
+            document.getElementById('insight-tag').innerText = "Aguardando resultados";
+            document.getElementById('insight-texto').innerText = "Inicie a escolha de cartas ou dispare a simulação da máquina para analisar as flutuações.";
+            
+            inicializarRodadaManual();
+            Skinner_Format();
+        }
+
+        window.onload = () => {
+            inicializarRodadaManual();
+            atualizarVisualizacaoMiniCartas('manual');
+            atualizarVisualizacaoMiniCartas('simulada');
+            Skinner_Format();
+        };
+    </script>
+</body>
+</html>
